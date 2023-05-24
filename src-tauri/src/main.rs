@@ -1,15 +1,19 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{sync::Mutex, convert::Infallible};
+use std::{sync::Mutex, convert::Infallible, io::Write};
 
 use llm::{ModelParameters, Model, LoadError, KnownModel, InferenceSession, InferenceRequest};
+use tauri::Window;
 
 struct State {
     //path: std::path::PathBuf,
     model: Mutex<Option<Box<dyn Model>>>,
     session: Mutex<Option<InferenceSession>>,
 }
+
+#[derive(Clone, serde::Serialize)]
+struct Payload(Option<String>);
 
 #[tauri::command]
 fn get_file_list() -> Vec<String> {
@@ -74,8 +78,7 @@ fn choose_model(state: tauri::State<State>, path: &std::path::Path, modeltype: &
 }
 
 #[tauri::command]
-fn speak(state: tauri::State<State>, s: &str) -> String {
-    let mut back = String::new();
+async fn speak(window: Window, state: tauri::State<'_, State>, s: String) -> Result<(), ()> {
     let mut session_guard = state.session.lock().unwrap();
     let session = session_guard.as_mut().unwrap();
     let model_guard = state.model.lock().unwrap();
@@ -84,16 +87,20 @@ fn speak(state: tauri::State<State>, s: &str) -> String {
             model.as_ref(),
             &mut rand::thread_rng(),
             &InferenceRequest {
-                prompt: s,
+                prompt: &s,
                 ..Default::default()
             },
             &mut Default::default(),
             |s| {
-                back.push_str(s);
+                window.emit("answer", Payload(Some(s.into()))).unwrap();
                 print!("{s}");
+                std::io::stdout().flush().unwrap();
                 Ok(())
             }).unwrap();
-    back
+
+    window.emit("answer", Payload(None)).unwrap();
+    println!();
+    Ok(())
 }
 
 fn main() {

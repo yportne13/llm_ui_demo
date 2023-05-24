@@ -1,7 +1,9 @@
-# Tauri + Yew
+# llm_ui_demo
 
-This template should help get you started developing with Tauri and Yew.
+this app is trying for using llm model on your local machine without install any other things.
 
-## Recommended IDE Setup
+only need to download the ggml weight file you like, and put it with this app together.
 
-[VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).
+this app will be able to download from release page(coming soon)
+
+base on [llm](https://github.com/rustformers/llm), [yew](https://yew.rs/) and [tauri](https://tauri.app/), inspired by [local.ai](https://github.com/louisgv/local.ai)

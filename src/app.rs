@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::{to_value, from_value};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::{EventTarget, HtmlSelectElement};
 use yew::prelude::*;
 
 #[wasm_bindgen]
@@ -27,6 +28,9 @@ struct ChooseArgs<'a> {
 
 #[function_component(App)]
 pub fn app() -> Html {
+    let model_type = use_state(|| "llama".to_owned());
+    let model_list = vec!["llama", "bloom", "gpt2", "gptj", "neox"];
+
     let models = use_state(Vec::<String>::new);
     {
         let models = models.clone();
@@ -110,16 +114,38 @@ pub fn app() -> Html {
     };
 
     html! {
-        <main class="container">
-            <div>
+        <main>// class="container"
+            <div style="width:20%;float:left;height:100%;overflow-y:auto">
+                <select class="select" onchange={
+                    let t = model_type.clone();
+                    let list = model_list.clone();
+                    Callback::from(move |event: Event| {
+                        let target: EventTarget = event
+                            .target()
+                            .expect("I'm sure this event has a target!");
+
+                        // maybe the target is a select element?
+                        if let Some(select_element) = target.dyn_ref::<HtmlSelectElement>() {
+                            let idx = select_element.selected_index() as usize;
+                            t.set(list[idx].to_string());
+                        }
+                    })}>
+                    {
+                        for model_list.iter()
+                            .map(|s| html! {
+                                <option value={*s} selected={&*model_type==s}>{s}</option>
+                            })
+                    }
+                </select>
                 {
                     for (*models).iter()
-                        .map(|s| html!(<p onclick={
+                        .map(|s| html!(<button class="model" onclick={
                             let m = s.clone();
+                            let t = model_type.clone();
                             Callback::from(move |_| {
                                 let args = to_value(&ChooseArgs{
                                         path: &m,
-                                        modeltype: "llama",
+                                        modeltype: &t,
                                     }).unwrap();
                                 spawn_local(async {
                                     let _ = invoke("choose_model",
@@ -127,17 +153,21 @@ pub fn app() -> Html {
                                     ).await;
                                 })
                             })
-                        }>{s}</p>))
+                        }>{s}</button>))
                 }
             </div>
 
-            <form class="row" onsubmit={greet}>
-                <input id="greet-input" ref={greet_input_ref} placeholder="Enter a name..." />
-                <button type="submit">{"Greet"}</button>
-            </form>
-
-            //<p><b>{ &*greet_msg }</b></p>
-            <em>{ &*greet_msg }</em>
+            <div style="width:80%;float:left;display:block;height:100%;overflow-y:auto">
+                <div style="display:block;height:80%;overflow-y:auto">
+                    <em>{ &*greet_msg }</em>
+                </div>
+                <div style="display:block;height:20%;overflow-y:auto">
+                    <form class="row" onsubmit={greet}>
+                        <input id="greet-input" ref={greet_input_ref} placeholder="Enter a question..." />
+                        <button type="submit">{"Greet"}</button>
+                    </form>
+                </div>
+            </div>
         </main>
     }
 }

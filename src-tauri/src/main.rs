@@ -54,8 +54,8 @@ fn choose_model(state: tauri::State<State>, path: &std::path::Path, modeltype: &
         "llama" => load_model::<llm::models::Llama>(path, params),
         "bloom" => load_model::<llm::models::Bloom>(path, params),
         "gpt2"  => load_model::<llm::models::Gpt2>(path, params),
-        //"gptj"  => load_model::<llm::models::GptJ>(path, params),
-        _       => load_model::<llm::models::GptJ>(path, params),
+        "gptj"  => load_model::<llm::models::GptJ>(path, params),
+        _       => load_model::<llm::models::NeoX>(path, params),
         //"gptneox" => handle_args::<llm::models::GptNeoX>(args, None),
         //_ => handle_args::<llm::models::Mpt>(args, None),
     };

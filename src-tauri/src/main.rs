@@ -3,7 +3,7 @@
 
 use std::{sync::Mutex, convert::Infallible, io::Write};
 
-use llm::{ModelParameters, Model, LoadError, KnownModel, InferenceSession, InferenceRequest};
+use llm::{ModelParameters, Model, LoadError, KnownModel, InferenceSession, InferenceRequest, InferenceResponse, InferenceFeedback};
 use tauri::Window;
 
 struct State {
@@ -45,7 +45,7 @@ fn choose_model(state: tauri::State<State>, path: &std::path::Path, modeltype: &
     println!("get path: {path:?}");
 
     fn load_model<M: KnownModel + 'static>(path: &std::path::Path, params: ModelParameters) -> Result<Box<dyn Model>, LoadError> {
-        let model = llm::load::<M>(path, params, |_| {println!("loading")})
+        let model = llm::load::<M>(path, params, None, |_| {println!("loading")})
             .map(Box::new);
         Ok(model?)
     }
@@ -91,11 +91,14 @@ async fn speak(window: Window, state: tauri::State<'_, State>, s: String) -> Res
                 ..Default::default()
             },
             &mut Default::default(),
-            |s| {
-                window.emit("answer", Payload(Some(s.into()))).unwrap();
-                print!("{s}");
-                std::io::stdout().flush().unwrap();
-                Ok(())
+            |s| match s {
+                InferenceResponse::PromptToken(s) | InferenceResponse::InferredToken(s) => {
+                    window.emit("answer", Payload(Some(s.clone()))).unwrap();
+                    print!("{s}");
+                    std::io::stdout().flush().unwrap();
+                    Ok(InferenceFeedback::Continue)
+                }
+                _ => {Ok(InferenceFeedback::Continue)}
             }).unwrap();
 
     window.emit("answer", Payload(None)).unwrap();

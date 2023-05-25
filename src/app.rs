@@ -136,7 +136,8 @@ pub fn app() -> Html {
                 <button type="submit">{"Greet"}</button>
             </form>
 
-            <p><b>{ &*greet_msg }</b></p>
+            //<p><b>{ &*greet_msg }</b></p>
+            <em>{ &*greet_msg }</em>
         </main>
     }
 }
